@@ -1,5 +1,5 @@
 #!/bin/bash
-reason=`cat reason.txt`
+reason=`cat reason.txt | cpp -P`
 num=`echo -n $reason | tr -d ' ' | wc -m`
 echo 文字数: $num
 if [ $num -gt 800 ]; then
