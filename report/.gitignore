@@ -1,0 +1,8 @@
+# ruby
+.bundle/
+vendor/
+Gemfile.lock
+
+# output
+*.html
+*.pdf
