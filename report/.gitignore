@@ -1,8 +1,4 @@
-# ruby
-.bundle/
-vendor/
-Gemfile.lock
-
-# output
-*.html
+*.aux
+*.log
+*.dvi
 *.pdf

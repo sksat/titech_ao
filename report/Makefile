@@ -1,8 +1,13 @@
-REVIEW		:= bundle exec review
-REVIEW_PDF	:= $(REVIEW)-pdfmaker
+SRC	= report.tex
+
+%.dvi:%.tex
+	platex $<
+
+%.pdf:%.dvi
+	dvipdfmx $<
 
 default:
-	$(REVIEW_PDF) config.yml
+	make report.pdf
 
 clean:
-	rm -f *.pdf
+	rm -f *.aux *.log
