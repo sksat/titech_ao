@@ -3,7 +3,7 @@
 \usepackage[dvipdfmx]{hyperref}
 \usepackage{color}
 \usepackage{listings,jlisting}
-\usepackage[top=30truemm,bottom=30truemm,left=10truemm,right=10truemm]{geometry}
+\usepackage[top=30truemm,bottom=15truemm,left=10truemm,right=10truemm]{geometry}
 
 \lstset{
 	language={C++},
@@ -33,18 +33,22 @@
 %\end{abstract}
 
 \section{背景}
-\cite[30日でできる！ OS自作入門]{30days-osdev}という，書籍がある．
-この本では，「はりぼてOS」というとても小さなOS(Operating System)を作ることで，
-普段は触れる事のない低いレイヤ\footnote{OSI参照モデルなどのレイヤ構造の意味でのレイヤのこと．}のことを学ぶことができる．
-
-「はりぼてOS」やLinuxなどのOSの動作確認は，実機での試験の他にエミュレータと呼ばれるプログラムを用いて行う事がある．
+\cite[30日でできる！ OS自作入門]{30days-osdev}という本をきっかけにプログラミングを初めた僕は，
+2016年のセキュリティ・キャンプ全国大会に参加し，よりコンピュータの仕組みに興味を持つようになった．
+その後，僕は\cite[自作エミュレータで学ぶx86アーキテクチャ]{learn-x86-by-emu}を読み，
+自作OSの動作確認に使っていたエミュレータというプログラムに興味を持つようになった．
 
 エミュレータとは，コンピュータの動作をエミュレート，つまり模倣するプログラムのことで，代表的なものとしては
-QEMU
-\footnote{Fabrice Bellardが中心となって開発しているオープンソースのエミュレータ．
-動的バイナリ変換(Dynamic Binary Translation)などの特徴的な機能を持ち，高速に動作する．}
-やBochs\footnote{オープンソースのPC/AT互換機のエミュレータ．}などのものがある．
+QEMU\footnote{Fabrice Bellardが中心となって開発しているオープンソースのエミュレータ．
+動的バイナリ変換(Dynamic Binary Translation)などの機能を持ち，高速に動作するのが特徴．}
+やBochs\footnote{オープンソースのPC/AT互換機のエミュレータ．}などがある．
+これらのエミュレータはコンピュータをほぼ正確に模倣するため，
+WindowsやLinuxなどの主要なOSや，「はりぼてOS」\footnote{\cite{30days-osdev}で作る小さなOS．}を動かすことができる．
 
+しかし，\cite{learn-x86-by-emu}で作るエミュレータはとても小さく機能もとても少ないものであり，
+WindowsやLinuxなどのOSを動かすことができないのはもちろん，「はりぼてOS」のような小さなOSも動かすことはできなかった．
+
+そこで，これらのOSを動かすために必要なエミュレータの機能を考え，独自のエミュレータを開発を初めた．
 
 \section{成果の具体的な内容}
 
@@ -180,6 +184,9 @@ x86の命令を関数型マクロを使ってとても見た目に分かりや�
 	INSN(0x04, add_al_imm8,Imm8, { AL = ADD(AL, IMM8); });
 	INSN(0x0c, or_al_imm8, Imm8, { AL = OR( AL, IMM8); });
 \end{lstlisting}
+
+\section{今後の方針}
+
 
 \section{単独の成果か否か}
 単独の成果である．
