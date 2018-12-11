@@ -9,5 +9,8 @@ SRC	= report.tex
 default:
 	make report.pdf
 
+check:
+	./check.sh
+
 clean:
 	rm -f *.aux *.log
