@@ -1,6 +1,18 @@
 \documentclass[10pt,a4j]{jsarticle}
 
 \usepackage[dvipdfmx]{hyperref}
+\usepackage{color}
+\usepackage{listings,jlisting}
+\usepackage[top=30truemm,bottom=30truemm,left=10truemm,right=10truemm]{geometry}
+
+\lstset{
+	language={C++},
+	backgroundcolor={\color[gray]{.85}},
+	frame={tb},
+	commentstyle={\color[rgb]{0,0.5,0}},
+	keywordstyle={\color[rgb]{1,0,0}},
+	stringstyle={\color[rgb]{0,0,1}}
+}
 
 \title{\vspace{-4cm}OSが動作するx86エミュレータの開発}
 \author{坂本優太}
@@ -55,14 +67,56 @@ BIOSは，HDDなどの外部記憶からブートローダという小さなプ�
 そして，ブートローダは外部記憶からOSを読み込み，実行する．
 
 \subsubsection{エミュレータの仕組み}
-\cite{learn-x86-by-emu}はエミュレータを自作することでコンピュータが動く仕組みを理解するという趣旨の本だが，
-これはつまりエミュレータを作るためにはコンピュータの仕組みを学ぶ必要があるということでもある．
+エミュレータはコンピュータを模擬するプログラムであるため，
 
 
 
 \subsubsection{動作モードの実装}
+「はりぼてOS」が動作するx86アーキテクチャには，
+\begin{itemize}
+	\item 16bitリアルモード
+	\item 32bitプロテクトモード
+	\item 仮想8086モード\footnote{実際にはプロセッサの動作モードではなく，プロテクトモードの属性の１つ．}
+\end{itemize}
+などの複数の動作モードがある．
+
+16bitモードでは，レジスタやメモリアクセスの単位の上限が16bit
+\footnote{ただし，Operand-Size Prefix・Address-Size Prefixなどがある場合は一時的に32bitになることがある．}
+，32bitモードではそれが32bitになる．
+
+また，リアルモードは8086プロセッサ互換の動作をするモード，
+プロテクトモードはCPUの保護機能が有効になる動作モードである．
+
+x86プロセッサでは，電源投入時は16bitリアルモードで動作する．
+しかし，この動作モードでは扱えるメモリアドレスの範囲が小さい上にCPUの保護機能も使うことができない．
+そのため，「はりぼてOS」などのOSは起動すると，まず32bitプロテクトモードへの遷移を行う．
+
+エミュレータを自作するにあたり初めに参考にした\cite{learn-x86-by-emu}のプログラムでは，
+32bitのリアルモードという仮想的な動作モードしか実装されていなかった．
+そのため，「はりぼてOS」が動作するエミュレータを自作するためには，
+「はりぼてOS」が使用する16bitリアルモードと32bitプロテクトモードの両方を実装する必要があった．
+
+\cite{learn-x86-by-emu}の実装では，
 
 \subsubsection{ディスプレイの実装}
+\cite{learn-x86-by-emu}のプログラムには，ディスプレイは一切実装されていない．
+ディスプレイのエミュレーションはエミュレータに無くてはならないものという訳ではない．
+しかし，「はりぼてOS」は入門用ということもあり，GUIに比較的重きを置いたOSである．
+そのため，ディスプレイを実装することは「はりぼてOS」が動作するエミュレータを作る，という目的を鑑みると自然なことだった．
+
+ディスプレイへの描画は，コンピュータ内部ではメモリ内のVRAM(Video RAM)という特殊な領域への書き込みとして行われている．
+ただし，VRAMはそこまで大きな領域ではないため，VRAMに書き込むデータはRGBのような直接的な色データではなく，事前に設定した色の番号である．
+
+\begin{lstlisting}
+size_t xsize=320, ysize=200; // 画面サイズ
+size_t x, y; // 座標
+char c = 0; // 色番号
+char *vram = (char*)0xa0000; // VRAM開始アドレス
+for(y=0; y<=ysize; y++){
+	for(x=0; x<=xsize; x++)
+		vram[y * xsize + x] = c; // 座標(x,y)に色番号cをセット
+}
+\end{lstlisting}
 
 
 \subsection{サイボウズ・ラボユースでの成果}
@@ -72,10 +126,53 @@ BIOSは，HDDなどの外部記憶からブートローダという小さなプ�
 %・セグメンテーションの実装
 %・実行テスト環境
 
+僕はこのx86エミュレータの開発を完全に趣味で行っていた．
+そんなとき，2017年の2月に東京で開催されたOSC
+\footnote{Open Source Conference Tokyo/Springのこと．}
+でサイボウズ・ラボユースという学生支援制度を\cite{30days-osdev}の著者の川合さんに紹介していただいた．
+これはサイボウズ・ラボが実施しているもので，メンターの指導と奨励金の支給を受けつつOSSを開発できる制度である．
+僕はx86エミュレータの開発をテーマにこの制度に申し込み，書類選考と面接を経て
+第７期サイボウズ・ラボユースにラボユース研究生
+\footnote{この制度には奨励金の有無のみが異なるラボユース生とラボユース研究生の２つのコースがある．僕はラボユース研究生としては初の採択だったようだ．}として採択された．
+
+ラボユースの期間中，実際に出社できたのは夏休みの間の数回だけのことだったため，
+開発は基本的に自宅で行い，メンターの光成さんからリモートでコードレビューを頂いたり，
+\cite{read-486}や\cite{effective-cpp}などの書籍を貸して頂いて参考にしたり，というのがラボユースでの主な活動となった．
+
+
+
+2018年3月，「第7期サイボウズ・ラボユース成果発表会」\footnote{https://blog.cybozu.io/entry/2018/04/05/080000}で成果発表を行い，
+僕はサイボウズ・ラボユース研究生を卒業した．
+
 \subsection{v2の実装}
 %・新たな実装
 %・実装の見通しの悪さを改善
 %・ラムダ式
+
+現在，「はりぼてOS」の全てのバージョンを動作させることを目標として，新たなx86エミュレータを１から開発している．
+改良するのではなく作り直す理由は，開発してきたエミュレータの実装は見通しが悪いため，
+デバッグや改良にかかる労力が大きすぎると判断したからだ．
+新たな実装は同一リポジトリのv2ブランチ\footnote{https://github.com/sk2sat/emu/tree/v2}で行っている．
+
+v2の開発では，設計の見通しの良さ\footnote{"数ヶ月後に見直しても難なく読める"のが目標だ．}と，
+実行中のメッセージの分かりやすさをとても重視している．
+また，実装にはC++の最新の規格であるC++17を用いている．
+
+v2での最も大きな変更点は，すべての命令の実装にC++のラムダ式を用いていることだ．
+これにより，ソースコード\ref{use-lamda}のように，
+x86の命令を関数型マクロを使ってとても見た目に分かりやすく実装することができるようになった．
+
+\begin{lstlisting}[caption=ラムダ式を使った命令の実装,label=use-lamda]
+#define INSN(opcode, insn, f, block) \
+	name[opcode] = #insn; \
+	flag[opcode] = f; \
+	func[op] = [](CPU &cpu, std::shared_ptr<Memory> memory) block;
+
+	// 命令の実装
+	INSN(0x00, add_rm8_r8, ModRM,{ SET_RM8( ADD(GET_RM8(), GET_R8(REG_NUM)) ); });
+	INSN(0x04, add_al_imm8,Imm8, { AL = ADD(AL, IMM8); });
+	INSN(0x0c, or_al_imm8, Imm8, { AL = OR( AL, IMM8); });
+\end{lstlisting}
 
 \section{単独の成果か否か}
 単独の成果である．
@@ -91,6 +188,7 @@ BIOSは，HDDなどの外部記憶からブートローダという小さなプ�
 	\bibitem{learn-x86-by-emu} 自作エミュレータで学ぶx86アーキテクチャ - コンピュータが動く仕組みを徹底理解！
 	\bibitem{SDM} Intel® 64 and IA-32 Architectures Software Developer’s Manual vol 1,2,3,4
 	\bibitem{read-486} はじめて読む486 - 32ビットコンピュータをやさしく語る
+	\bibitem{effective-cpp} Effective C++ - プログラムとデザインを改良するための55項目
 \end{thebibliography}
 
 \end{document}
