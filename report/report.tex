@@ -170,7 +170,7 @@ unsigned char* Display::Draw(){
 
 \ref{impl-segmentation}と\ref{impl-test-env}はラボユース期間中の主な成果
 
-2018年3月，「第7期サイボウズ・ラボユース成果発表会」\footnote{https://blog.cybozu.io/entry/2018/04/05/080000}で成果発表を行い，
+2018年3月，「第7期サイボウズ・ラボユース成果発表会」\footnote{\url{https://blog.cybozu.io/entry/2018/04/05/080000}}で成果発表を行い，
 僕はサイボウズ・ラボユース研究生を卒業した．
 
 \section{今後の方針}
@@ -181,7 +181,7 @@ unsigned char* Display::Draw(){
 現在，「はりぼてOS」の全てのバージョンを動作させることを目標として，新たなx86エミュレータを１から開発している．
 改良するのではなく作り直す理由は，開発してきたエミュレータの実装は見通しが悪いため，
 デバッグや改良にかかる労力が大きすぎると判断したからだ．
-新たな実装は同一リポジトリのv2ブランチ\footnote{https://github.com/sk2sat/emu/tree/v2}で行っている．
+新たな実装は同一リポジトリのv2ブランチ\footnote{\url{https://github.com/sk2sat/emu/tree/v2}}で行っている．
 
 v2の開発では，設計の見通しの良さ\footnote{"数ヶ月後に見直しても難なく読める"のが目標だ．}と，
 実行中のメッセージの分かりやすさをとても重視している．
@@ -218,6 +218,13 @@ x86の命令を関数型マクロを使ってとても見た目に分かりや�
 コードレビューで指摘されたのはC++の書き方に関するものであり，これによる設計やロジックの変更は生じなかった．
 \footnote{コードレビューによる変更は"[FIX] from code review"というコミットで行われている．}
 
+成果は全てGitHub上で公開している．
+該当するリポジトリは以下の３つである．
+\begin{itemize}
+	\item \url{https://github.com/sk2sat/vm}			当初作っていたエミュレータ
+	\item \url{https://github.com/sk2sat/emu}			ラボユース申し込み後に作り直したエミュレータ
+	\item \url{https://github.com/sk2sat/haribote-os}	「はりぼてOS」実行テスト用のプロジェクト
+\end{itemize}
 
 \begin{thebibliography}{99}
 	\bibitem{30days-osdev} 30日でできる！ OS自作入門
