@@ -3,7 +3,7 @@
 \usepackage[dvipdfmx]{hyperref}
 \usepackage{color}
 \usepackage{listings,jlisting}
-\usepackage[top=30truemm,bottom=15truemm,left=10truemm,right=10truemm]{geometry}
+\usepackage[top=15truemm,bottom=15truemm,left=10truemm,right=10truemm]{geometry}
 
 \lstset{
 	language={C++},
@@ -14,7 +14,7 @@
 	stringstyle={\color[rgb]{0,0,1}}
 }
 
-\title{\vspace{-4cm}OSが動作するx86エミュレータの開発}
+\title{\vspace{-2cm}OSが動作するx86エミュレータの開発}
 \author{坂本優太}
 \date{}
 
@@ -49,19 +49,102 @@ WindowsやLinuxなどの主要なOSや，「はりぼてOS」\footnote{\cite{30d
 WindowsやLinuxなどのOSを動かすことができないのはもちろん，「はりぼてOS」のような小さなOSも動かすことはできなかった．
 
 そこで，これらのOSを動かすために必要なエミュレータの機能を考え，独自のエミュレータを開発を初めた．
+ただし，WindowsやLinuxのような大きなOSを動かすためにはとても多くの機能を実装する必要があるため，
+あくまで「はりぼてOS」を動かすことを目標とした．
 
 \section{成果の具体的な内容}
 
-\subsection{エミュレータの基本的な実装}
+\subsection{エミュレータの設計}
 % コード示してから本のエミュとの相違点説明の方が分かりやすい・書きやすいかも？
 
-\subsection{ディスプレイの実装}
+C++によるエミュレータの実装の基本的な部分は\ref{impl-emu-base}のようになった．
+\begin{lstlisting}[caption=エミュレータの基本的な実装,label=impl-emu-base]
+typedef union {
+	uint32_t reg32;
+	uint16_t reg16; // 下位16bit
+	struct {
+		uint8_t low8, high8;
+	};
+} Register32; // 32bit register
 
-\subsection{セグメンテーションの実装}
+class Emulator {
+	public:
+		Register32 CR[5], eflags, eip, reg[8];	// レジスタ
+		uint8_t *memory;			// メモリ
+	private:
+		int bite_mode, memory_size;
+}
+
+typedef void instruction_func_t(Emulator *emu); // １つの命令に対応する関数の型
+instruction_func_t* instruction16[256];
+instruction_func_t* instruction32[256];
+\end{lstlisting}
+Emulatorクラスには，コンピュータを構成する要素であるCPUやメモリを１つにまとめたものだ．
+Register32は32bit長のレジスタを表す共用体で，
+メンバを使って下位の8,16bitの領域へのアクセスが行いやすくなっている．
+これは実際のレジスタもそのようなアクセスがあるためで，
+例えばEAXというレジスタは下位16bitがAX，そのうち上位8bitがAH，下位8bitがALという名前のレジスタとして扱われる．
+また，メモリはuint8\_t型の並んだメモリ領域として表現した．
+
+さらに，１つのx86の命令は１つの関数で表現し，それらの関数ポインタの配列．
+これは\cite{learn-x86-by-emu}の実装を元にしたものだが，本の実装は32bitのみなので，
+複数の動作モードに対応するため，16bitと32bitそれぞれに関数ポインタ配列を用意した．
+
+\subsection{ディスプレイの実装}
+QEMUやBochsなどのエミュレータでは，ディスプレイのエミュレートをすることもできる．
+エミュレータには必ずしもディスプレイのエミュレートが必要という訳ではない．
+しかし，動作目標の「はりぼてOS」は比較的GUIの比重が大きい他，
+単純に「はりぼてOS」のUIが自分のエミュレータで見られると嬉しいと思ったため，実装することにした．
+
+ディスプレイは，指定した色で発光するピクセルが解像度の分だけ並んでいるデバイスであり，
+描画はそれぞれの座標への色の指定という形で行われている．
+この座標と色の設定は，実際にはVRAMというメモリ領域への書き込みによって実現されている．
+
+このVRAMでは1ピクセルに相当するのは1byteとなっている．
+これではRGBで色を指定することができないので，ここに書き込むデータはRGBのような色データではなく，
+パレットという外部装置に事前に設定しておいた色の番号ということになっている．
+
+これらをエミュレートするため，
+\begin{itemize}
+	\item 外部装置へのアクセス
+	\item パレット
+	\item VRAMのデータからRGBデータを生成
+	\item RGBデータをウィンドウに表示
+\end{itemize}
+の実装を行った．
+
+x86では，外部装置へのアクセスはin/out命令で行われる．
+これは，デバイスの基本クラスを作り，
+in/out命令が実行されると対応するデバイスのクラスの関数が呼ばれるようにすることで表現した．
+ディスプレイは１つのデバイスクラスとしてデバイスの基本クラスを継承して作り，
+RGBのテーブルとして表現したパレットをout命令で設定できるようにした．
+
+VRAMのデータから実際に描画されるRGBのデータを生成するのは，
+画面上の全ての座標においてVRAMから読み取った色番号に対応する色データをパレットから取得して設定することで実装した．
+
+\begin{lstlisting}
+unsigned char* Display::Draw(){
+	for(int x=0;x<scrnx;x++){
+		for(int y=0;y<scrny;y++){
+			int i = y*scrnx + x;
+			char n= vram[i]; // (x,y)の色番号
+			img[i*3  ] = palette[n*3  ];
+			img[i*3+1] = palette[n*3+1];
+			img[i*3+2] = palette[n*3+2];
+		}
+	}
+	return img;
+}
+\end{lstlisting}
+
+生成したRGBデータをウィンドウに表示する部分は，
+オープンソースでマルチプラットフォーム対応のGUIライブラリであるfreeglutを使用した．
+
+\subsection{セグメンテーションの実装\label{impl-segmentation}}
 % GDT,GDTRの実装
 % メモリ保護はまだ
 
-\subsection{テスト環境の整備}
+\subsection{テスト環境の整備\label{impl-test-env}}
 % haribote-os
 % make runでバージョン指定してテストできるようにした
 
@@ -161,7 +244,7 @@ WindowsやLinuxなどのOSを動かすことができないのはもちろん，
 開発は基本的に自宅で行い，メンターの光成さんからリモートでコードレビューを頂いたり，
 \cite{read-486}や\cite{effective-cpp}などの書籍を貸して頂いて参考にしたり，というのがラボユースでの主な活動となった．
 
-% 2.3と2.4はラボユース期間中の主な成果
+\ref{impl-segmentation}と\ref{impl-test-env}はラボユース期間中の主な成果
 
 2018年3月，「第7期サイボウズ・ラボユース成果発表会」\footnote{https://blog.cybozu.io/entry/2018/04/05/080000}で成果発表を行い，
 僕はサイボウズ・ラボユース研究生を卒業した．
