@@ -115,20 +115,20 @@ RGBのテーブルとして表現したパレットをout命令で設定でき�
 VRAMのデータから実際に描画されるRGBのデータを生成するのは，
 画面上の全ての座標においてVRAMから読み取った色番号に対応する色データをパレットから取得して設定することで実装した．
 
-%\begin{lstlisting}
-%unsigned char* Display::Draw(){
-%	for(int x=0;x<scrnx;x++){
-%		for(int y=0;y<scrny;y++){
-%			int i = y*scrnx + x;
-%			char n= vram[i]; // (x,y)の色番号
-%			img[i*3  ] = palette[n*3  ];
-%			img[i*3+1] = palette[n*3+1];
-%			img[i*3+2] = palette[n*3+2];
-%		}
-%	}
-%	return img;
-%}
-%\end{lstlisting}
+\begin{lstlisting}
+unsigned char* Display::Draw(){
+	for(int x=0;x<scrnx;x++){
+		for(int y=0;y<scrny;y++){
+			int i = y*scrnx + x;
+			char n= vram[i]; // (x,y)の色番号
+			img[i*3  ] = palette[n*3  ];
+			img[i*3+1] = palette[n*3+1];
+			img[i*3+2] = palette[n*3+2];
+		}
+	}
+	return img;
+}
+\end{lstlisting}
 
 生成したRGBデータをウィンドウに表示する部分は，
 オープンソースでマルチプラットフォーム対応のGUIライブラリであるfreeglutを使用した．
