@@ -3,7 +3,7 @@
 \usepackage[dvipdfmx]{hyperref}
 \usepackage{color}
 \usepackage{listings,jlisting}
-\usepackage[top=15truemm,bottom=15truemm,left=10truemm,right=10truemm]{geometry}
+\usepackage[top=5truemm,bottom=15truemm,left=10truemm,right=10truemm]{geometry}
 
 \lstset{
 	language={C++},
@@ -14,7 +14,7 @@
 	stringstyle={\color[rgb]{0,0,1}}
 }
 
-\title{\vspace{-2cm}OSが動作するx86エミュレータの開発}
+\title{\vspace{-1.7cm}OSが動作するx86エミュレータの開発}
 \author{坂本優太}
 \date{}
 
@@ -111,20 +111,20 @@ RGBのテーブルとして表現したパレットをout命令で設定でき�
 VRAMのデータから実際に描画されるRGBのデータを生成するのは，
 画面上の全ての座標においてVRAMから読み取った色番号に対応する色データをパレットから取得して設定することで実装した．
 
-\begin{lstlisting}
-unsigned char* Display::Draw(){
-	for(int x=0;x<scrnx;x++){
-		for(int y=0;y<scrny;y++){
-			int i = y*scrnx + x;
-			char n= vram[i]; // (x,y)の色番号
-			img[i*3  ] = palette[n*3  ];
-			img[i*3+1] = palette[n*3+1];
-			img[i*3+2] = palette[n*3+2];
-		}
-	}
-	return img;
-}
-\end{lstlisting}
+%\begin{lstlisting}
+%unsigned char* Display::Draw(){
+%	for(int x=0;x<scrnx;x++){
+%		for(int y=0;y<scrny;y++){
+%			int i = y*scrnx + x;
+%			char n= vram[i]; // (x,y)の色番号
+%			img[i*3  ] = palette[n*3  ];
+%			img[i*3+1] = palette[n*3+1];
+%			img[i*3+2] = palette[n*3+2];
+%		}
+%	}
+%	return img;
+%}
+%\end{lstlisting}
 
 生成したRGBデータをウィンドウに表示する部分は，
 オープンソースでマルチプラットフォーム対応のGUIライブラリであるfreeglutを使用した．
@@ -185,6 +185,18 @@ GDTはGlobal Desriptor Tableの略で，
 これは１つのセグメントの開始アドレス・サイズ・属性を表すDescriptorという構造体が並んでいるメモリ領域のことで，
 この領域の開始アドレスとサイズを指定するのがGDTRというレジスタになる．
 
+エミュレータの実装では，このような，
+セグメントレジスタからセグメントの番号を取得し，GDTRに設定されたGDTのメモリ領域を読み込んでアドレス変換する一連のプロセスをL2P(Logical Address to Physical Addressのつもり)という関数にまとめた．
+
+\begin{lstlisting}
+uint32_t Emulator::L2P(const x86::SRegister *sreg, const uint32_t &addr){
+	if(!IsProtected()) return (sreg->reg16 * 16) + addr; // real mode
+	Descriptor desc;
+	desc.low32 = GET_MEM32(GDTR.base+(sreg->index*8));
+	desc.high32= GET_MEM32(GDTR.base+(sreg->index*8)+4);
+	return addr + desc.GetBase();
+}
+\end{lstlisting}
 
 \section{サイボウズ・ラボユースでの活動}
 %・vmからemuに
