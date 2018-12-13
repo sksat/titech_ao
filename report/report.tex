@@ -18,7 +18,7 @@
 	tabsize=4,
 }
 
-\title{\vspace{-1.7cm}OSが動作するx86エミュレータの開発}
+\title{\vspace{0cm}OSが動作するx86エミュレータの開発}
 \author{坂本優太}
 \date{}
 
@@ -29,7 +29,7 @@
 \cite[30日でできる！ OS自作入門]{30days-osdev}という本をきっかけにプログラミングを初めた僕は，
 2016年のセキュリティ・キャンプ全国大会に参加し，よりコンピュータの仕組みに興味を持つようになった．
 その後，僕は\cite[自作エミュレータで学ぶx86アーキテクチャ]{learn-x86-by-emu}を読み，
-自作OSの動作確認に使っていたエミュレータというプログラムに興味を持つようになった．
+\cite{30days-osdev}で自作OSの動作確認に使っていたエミュレータというプログラムに興味を持つようになった．
 
 エミュレータとは，コンピュータの動作をエミュレート，つまり模倣するプログラムのことで，代表的なものとしては
 QEMU\footnote{Fabrice Bellardが中心となって開発しているオープンソースのエミュレータ．
@@ -265,7 +265,8 @@ x86の命令を関数型マクロを使ってとても見た目に分かりや�
 
 \begin{lstlisting}[caption=ラムダ式を使った命令の実装の一部,label=use-lamda]
 #define INSN(opcode, insn, f, block) \
-	name[opcode] = #insn; flag[opcode] = f; \
+	name[opcode] = #insn; \
+	flag[opcode] = f; \
 	func[op] = [](CPU &cpu, std::shared_ptr<Memory> memory) block;
 
 	// 命令の実装
